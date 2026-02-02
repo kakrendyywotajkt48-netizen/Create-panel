@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Panel Creator – By Rendyy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  background:#0a0e17;
+  color:#fff;
+  font-family:Arial;
+}
+
+.card{
+  background:#111827;
+  padding:12px;
+  margin:10px;
+  border-radius:10px;
+  border:1px solid #1f2937;
+}
+
+.btn{
+  width:100%;
+  padding:10px;
+  background:#2563eb;
+  border:none;
+  color:#fff;
+  border-radius:8px;
+  margin-top:6px;
+  cursor:pointer;
+}
+
+input,select{
+  width:100%;
+  padding:8px;
+  margin-bottom:8px;
+  background:#030712;
+  border:1px solid #1f2937;
+  color:#fff;
+}
+
+.log{
+  background:#000;
+  padding:8px;
+  height:200px;
+  overflow:auto;
+  font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<h2 align="center">🚀 PANEL PTERODACTYL BY RENDYY</h2>
+
+<!-- CREATE USER -->
+<div class="card">
+<h3>1. Buat User</h3>
+
+<input id="email" placeholder="Email">
+<input id="username" placeholder="Username">
+<input id="password" placeholder="Password">
+
+<button class="btn" onclick="buatUser()">
+Buat User
+</button>
+</div>
+
+<!-- CREATE SERVER -->
+<div class="card">
+<h3>2. Buat Server</h3>
+
+<select id="ram">
+<option value="1024">1GB</option>
+<option value="2048">2GB</option>
+<option value="3072">3GB</option>
+<option value="4096">4GB</option>
+<option value="0">UNLIMITED</option>
+</select>
+
+<input id="nama" placeholder="Nama Server">
+<input id="userid" placeholder="User ID (auto isi setelah buat user)">
+<input id="cpu" placeholder="CPU (100 = 1 Core)">
+<input id="disk" placeholder="Disk (MB)">
+
+<button class="btn" onclick="buatServer()">
+Buat Server
+</button>
+
+<h3>Log:</h3>
+<pre class="log" id="log">-</pre>
+
+</div>
+
+<script>
+// ========== EDIT DISINI ==========
+
+const HOST = "https://panelmu.com"
+const APPKEY = "APPLICATION_API_KEY"
+
+const NODE_ID = 1
+const EGG_ID = 15
+const ALLOCATION_ID = 1
+
+// =================================
+
+function tulis(t){
+ log.innerText = t
+}
+
+// ===== BUAT USER =====
+async function buatUser(){
+
+ let data = {
+  email: email.value,
+  username: username.value,
+  first_name: username.value,
+  last_name: "user",
+  password: password.value
+ }
+
+ tulis("Membuat user...")
+
+ let r = await fetch(
+ HOST+"/api/application/users",
+ {
+  method:"POST",
+  headers:{
+   "Authorization":"Bearer "+APPKEY,
+   "Content-Type":"application/json",
+   "Accept":"application/json"
+  },
+  body:JSON.stringify(data)
+ })
+
+ let j = await r.json()
+
+ if(j.attributes){
+   userid.value = j.attributes.id
+
+   tulis(
+    "USER BERHASIL\nID: "+
+    j.attributes.id
+   )
+ }else{
+   tulis(JSON.stringify(j,null,2))
+ }
+
+}
+
+// ===== BUAT SERVER =====
+async function buatServer(){
+
+ let memory = Number(ram.value)
+ let diskv  = Number(disk.value||memory*2)
+ let cpuv   = Number(cpu.value||100)
+
+ if(memory == 0){
+   diskv = 0
+   cpuv  = 0
+ }
+
+ let data = {
+  name: nama.value,
+  user: Number(userid.value),
+  egg: EGG_ID,
+  docker_image: "ghcr.io/pterodactyl/yolks:nodejs_18",
+
+  startup: "npm start",
+
+  environment:{
+   STARTUP_CMD: "npm start"
+  },
+
+  limits:{
+   memory: memory,
+   swap: 0,
+   disk: diskv,
+   io: 500,
+   cpu: cpuv
+  },
+
+  feature_limits:{
+   databases: 1,
+   backups: 1,
+   allocations: 1
+  },
+
+  allocation:{
+   default: ALLOCATION_ID
+  },
+
+  deploy:{
+   locations:[ NODE_ID ],
+   dedicated_ip:false,
+   port_range:[]
+  }
+ }
+
+ tulis("Membuat server...")
+
+ let r = await fetch(
+  HOST+"/api/application/servers",
+ {
+  method:"POST",
+  headers:{
+   "Authorization":"Bearer "+APPKEY,
+   "Content-Type":"application/json",
+   "Accept":"application/json"
+  },
+  body:JSON.stringify(data)
+ })
+
+ let j = await r.json()
+
+ tulis(
+ "SERVER RESPONSE:\n\n"+
+ JSON.stringify(j,null,2)
+ )
+
+}
+</script>
+
+</body>
+</html>
